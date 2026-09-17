@@ -1,7 +1,3 @@
-databases:
-  - name: shadow-db
-    plan: free
-
 services:
   - type: web
     name: shadow-backend
@@ -10,20 +6,35 @@ services:
     buildCommand: pip install -r requirements.txt
     startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
     envVars:
-      - key: DATABASE_URL
-        fromDatabase:
-          name: shadow-db
-          property: connectionString
+      # --- Turso (short-term store) ---
+      - key: TURSO_DATABASE_URL
+        sync: false
+      - key: TURSO_AUTH_TOKEN
+        sync: false
+
+      # --- Cloudflare D1 (long-term store) ---
+      - key: CF_ACCOUNT_ID
+        sync: false
+      - key: CF_D1_DATABASE_ID
+        sync: false
+      - key: CF_API_TOKEN
+        sync: false
+
+      # --- LLM providers ---
       - key: GEMINI_API_KEY
         sync: false
       - key: GROQ_API_KEY
         sync: false
+
+      # --- Telegram ---
       - key: TELEGRAM_BOT_TOKEN
         sync: false
       - key: TELEGRAM_WEBHOOK_SECRET
         sync: false
       - key: TELEGRAM_OWNER_ID
         sync: false
+
+      # --- Twilio ---
       - key: TWILIO_ACCOUNT_SID
         sync: false
       - key: TWILIO_AUTH_TOKEN
@@ -34,5 +45,35 @@ services:
         sync: false
       - key: PUBLIC_BASE_URL
         sync: false
+
+      # --- Orb client auth ---
       - key: ORB_CLIENT_TOKEN
+        sync: false
+
+      # --- Timezone / daily routine (India) ---
+      - key: LOCAL_TIMEZONE
+        value: Asia/Kolkata
+      - key: WAKE_TIME
+        value: "07:00"
+      - key: EOD_REPORT_TIME
+        value: "22:30"
+
+      # --- Weather (Open-Meteo — no key needed, just your coordinates) ---
+      - key: HOME_LAT
+        sync: false
+      - key: HOME_LON
+        sync: false
+
+      # --- Google Calendar + Sheets (shared OAuth refresh token) ---
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      - key: GOOGLE_CLIENT_SECRET
+        sync: false
+      - key: GOOGLE_REFRESH_TOKEN
+        sync: false
+      - key: GOOGLE_CALENDAR_ID
+        sync: false
+      - key: GOOGLE_SHEETS_SHORT_TERM_ID
+        sync: false
+      - key: GOOGLE_SHEETS_LONG_TERM_ID
         sync: false

@@ -2,7 +2,6 @@ import base64
 import json
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 from .config import ORB_CLIENT_TOKEN
-from .database import SessionLocal
 from .brain import handle_message
 from .stt import transcribe
 from .tts import synthesize
@@ -35,8 +34,7 @@ async def orb_socket(ws: WebSocket):
             else:
                 continue
 
-            async with SessionLocal() as session:
-                reply = await handle_message(session, "orb", user_text)
+            reply = await handle_message("orb", user_text)
 
             await ws.send_json({"type": "reply_text", "text": reply})
 

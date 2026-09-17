@@ -1,7 +1,6 @@
 import httpx
 from fastapi import APIRouter, Request, HTTPException
 from .config import TELEGRAM_BOT_TOKEN, TELEGRAM_OWNER_ID, TELEGRAM_WEBHOOK_SECRET
-from .database import SessionLocal
 from .brain import handle_message
 from .stt import transcribe
 from .tts import synthesize
@@ -56,8 +55,7 @@ async def telegram_webhook(secret: str, request: Request):
         await _send_text(chat_id, "Samajh nahi aaya, phir se bolo/likho?")
         return {"ok": True}
 
-    async with SessionLocal() as session:
-        reply = await handle_message(session, "telegram", user_text)
+    reply = await handle_message("telegram", user_text)
 
     if was_voice:
         audio = await synthesize(reply)
