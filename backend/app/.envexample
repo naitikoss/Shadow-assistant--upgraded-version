@@ -1,0 +1,70 @@
+# =========================================================================
+# Shadow Assistant — backend environment variables
+# Fill in the values below, then set these as Environment Variables on
+# Render (or in a local .env for dev). Remove the comments if you like —
+# they're just here to explain what each one is for.
+# =========================================================================
+
+# --- LLM providers (need at least one; both = fallback chain) ---
+# Comma-separate multiple keys for round-robin rotation, e.g.
+# GEMINI_API_KEYS=key1,key2,key3
+GEMINI_API_KEY=
+GROQ_API_KEY=
+
+# --- Turso (short-term memory: chat history, day tasks, confirmations) ---
+# turso db show <db-name> --url
+TURSO_DATABASE_URL=
+# turso db tokens create <db-name>
+TURSO_AUTH_TOKEN=
+
+# --- Cloudflare D1 (long-term memory: standing facts, recurring tasks, history) ---
+CF_ACCOUNT_ID=
+# wrangler d1 create <name>
+CF_D1_DATABASE_ID=
+# needs "D1: Edit" permission
+CF_API_TOKEN=
+
+# --- Telegram ---
+# from @BotFather
+TELEGRAM_BOT_TOKEN=
+# any strong random string — also used in the webhook URL path
+TELEGRAM_WEBHOOK_SECRET=
+# your numeric Telegram user ID, from @userinfobot
+# IMPORTANT: leave this unset/0 and the bot will reply to ANYONE, not just you
+TELEGRAM_OWNER_ID=
+
+# --- Twilio (voice call reminders) ---
+TWILIO_ACCOUNT_SID=
+TWILIO_AUTH_TOKEN=
+TWILIO_FROM_NUMBER=
+TWILIO_CALL_TO_NUMBER=
+# your Render service's public URL, e.g. https://shadow-assistant.onrender.com
+PUBLIC_BASE_URL=
+
+# --- Orb client auth (must match the ORB_CLIENT_TOKEN in orb-client/orb.py) ---
+# any strong random string
+ORB_CLIENT_TOKEN=
+
+# --- Google Calendar + Google Sheets (shared OAuth refresh-token flow) ---
+GOOGLE_CLIENT_ID=
+GOOGLE_CLIENT_SECRET=
+GOOGLE_REFRESH_TOKEN=
+GOOGLE_SHEETS_SHORT_TERM_ID=
+GOOGLE_SHEETS_LONG_TERM_ID=
+
+# =========================================================================
+# Optional — every one of these already has a sane default in config.py.
+# Only set the ones you actually want to change.
+# =========================================================================
+
+# LOCAL_TIMEZONE=Asia/Kolkata
+# WAKE_TIME=07:00
+# EOD_REPORT_TIME=22:30
+# HOME_LAT=22.7196
+# HOME_LON=75.8577
+# TWILIO_VOICE=Polly.Aditi
+# SHORT_TERM_MAX_MESSAGES=40
+# GOOGLE_CALENDAR_ID=primary
+# GOOGLE_SHEETS_SHORT_TERM_RANGE=ShortTerm!A:F
+# GOOGLE_SHEETS_LONG_TERM_RANGE=LongTerm!A:F
+# LONG_TERM_MARKER=\longtermtask
