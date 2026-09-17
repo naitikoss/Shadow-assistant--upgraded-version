@@ -8,9 +8,10 @@ if _raw_db_url.startswith("postgresql://"):
     _raw_db_url = _raw_db_url.replace("postgresql://", "postgresql+asyncpg://", 1)
 DATABASE_URL = _raw_db_url
 
-# --- LLM providers (multi-provider, same pattern as chatbot6) ---
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
-GROQ_API_KEY = os.getenv("GROQ_API_KEY", "")
+# --- LLM providers (multi-provider, multi-key rotation — same pattern as the Instagram bot) ---
+# comma-separated lists, e.g. "key1,key2,key3"
+GEMINI_API_KEYS = [k for k in os.getenv("GEMINI_API_KEYS", os.getenv("GEMINI_API_KEY", "")).split(",") if k.strip()]
+GROQ_API_KEYS = [k for k in os.getenv("GROQ_API_KEYS", os.getenv("GROQ_API_KEY", "")).split(",") if k.strip()]
 
 # --- Telegram ---
 TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "")
