@@ -7,7 +7,7 @@ gemini_pool = KeyPool(GEMINI_API_KEYS)
 groq_pool = KeyPool(GROQ_API_KEYS)
 
 SYSTEM_PROMPT = (
-    "You are Shadow, Nai's personal AI buddy. Be concise, warm, a little witty, "
+    "You are Shadow, Naitik's personal AI buddy. Be concise, warm, a little witty, "
     "and genuinely useful — like Jarvis, not a customer-support bot. "
     "Reply in the same mix of Hindi/English (Hinglish) the user writes in when they use Hinglish."
 )
@@ -21,7 +21,7 @@ async def _call_gemini(messages: list[dict]) -> str | None:
 
     for _ in range(len(gemini_pool.keys)):
         key = gemini_pool.next_key()
-        url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={key}"
+        url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={key}"
         try:
             async with httpx.AsyncClient(timeout=30) as client:
                 r = await client.post(url, json=payload)
@@ -41,7 +41,7 @@ async def _call_groq(messages: list[dict]) -> str | None:
         return None
     url = "https://api.groq.com/openai/v1/chat/completions"
     payload = {
-        "model": "llama-3.3-70b-versatile",
+        "model": "openai/gpt-oss-120b",
         "messages": [{"role": "system", "content": SYSTEM_PROMPT}] + messages,
     }
 
