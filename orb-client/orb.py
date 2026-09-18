@@ -26,8 +26,8 @@ import io
 import simpleaudio as sa
 
 # ---- CONFIG: fill these in ----
-BACKEND_WS_URL = "wss://your-app.onrender.com/ws/orb"
-ORB_CLIENT_TOKEN = "change-me"  # must match ORB_CLIENT_TOKEN on the backend
+BACKEND_WS_URL = "wss://shadow-backend.onrender.com/ws/orb"   # apna Render URL, https ki jagah wss, http ki jagah ws
+ORB_CLIENT_TOKEN = "517bcfba7001e6e3dc6166ee8ca2201f93d7b08968f8f2d5"
 # --------------------------------
 
 SAMPLE_RATE = 16000
