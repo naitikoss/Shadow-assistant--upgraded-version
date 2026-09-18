@@ -3,11 +3,11 @@ import httpx
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.cron import CronTrigger
 from .config import (
-    TELEGRAM_BOT_TOKEN, TELEGRAM_OWNER_ID,
     TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_FROM_NUMBER,
     TWILIO_CALL_TO_NUMBER, PUBLIC_BASE_URL, WAKE_TIME, EOD_REPORT_TIME, FEATURES,
 )
-from . import db_turso, db_d1, llm, sheets, timeutils
+from . import db_turso, db_d1, llm, sheets, timeutils, telegram_client, ntfy_client
+from .tts import synthesize
 
 TZ = timeutils.TZ
 
@@ -16,14 +16,13 @@ TZ = timeutils.TZ
 # Low-level senders
 # --------------------------------------------------------------------
 async def send_telegram_message(text: str):
-    if not TELEGRAM_BOT_TOKEN or not TELEGRAM_OWNER_ID:
-        return
-    url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
-    async with httpx.AsyncClient(timeout=15) as client:
-        await client.post(url, json={"chat_id": TELEGRAM_OWNER_ID, "text": text})
+    await telegram_client.send_text(text)
 
 
-async def make_call(text: str):
+async def _twilio_call(text: str):
+    """Legacy path — only used if FEATURES['use_ntfy_calls'] is False and
+    the TWILIO_* env vars are set. Kept for anyone who'd rather pay for a
+    real ringing phone call than use the free ntfy + voice-note flow."""
     if not (TWILIO_ACCOUNT_SID and TWILIO_AUTH_TOKEN and TWILIO_FROM_NUMBER and TWILIO_CALL_TO_NUMBER):
         return
     twiml_url = f"{PUBLIC_BASE_URL}/twilio/say?text={httpx.QueryParams({'t': text})['t']}"
@@ -34,10 +33,27 @@ async def make_call(text: str):
         await client.post(url, data=data, auth=auth)
 
 
+async def speak(text: str, ring_title: str = "Shadow"):
+    """
+    The "call section" channel. Default (free) path:
+      1. ntfy urgent push -> phone rings/vibrates/screen-wakes, tap deep-links
+         into the Telegram bot chat.
+      2. A TTS voice note with the full text is sent to that same chat, so
+         it's already waiting the moment the chat opens.
+    Falls back to a real Twilio call only if use_ntfy_calls is turned off.
+    """
+    if FEATURES.get("use_ntfy_calls", True):
+        rang = await ntfy_client.ring(ring_title, text, urgent=True)
+        audio = await synthesize(text)
+        await telegram_client.send_voice(audio, caption=text if not rang else None)
+    else:
+        await _twilio_call(text)
+
+
 async def dispatch(text: str, section: str):
     """section: 'call' | 'message' | 'both' — routes to the right channel(s)."""
     if section in ("call", "both"):
-        await make_call(text)
+        await speak(text)
     if section in ("message", "both"):
         await send_telegram_message(text)
 
@@ -48,8 +64,7 @@ async def dispatch(text: str, section: str):
 # --------------------------------------------------------------------
 async def announce_task(title: str, due_local: dt.datetime, section: str):
     text = f"Naya task set ho gaya: \"{title}\", {timeutils.human(due_local)} ke liye."
-    call_section = "call" if section in ("call", "both") else "message"
-    await dispatch(text, call_section if call_section == "call" else "message")
+    await dispatch(text, "call" if section in ("call", "both") else "message")
 
 
 # --------------------------------------------------------------------
@@ -84,7 +99,7 @@ async def _morning_greeting():
 
     weekday = timeutils.weekday_hi()
     greeting = f"Good morning Nai! {weekday} hai aaj. {quote}"
-    await make_call(greeting)
+    await speak(greeting, ring_title="Good morning!")
 
     start_utc, end_utc = timeutils.day_bounds_utc()
     today_tasks = await db_turso.tasks_for_day(start_utc, end_utc)
@@ -120,7 +135,8 @@ async def _end_of_day_report():
             f"⏳ Pending: {report['not_done_summary']}\n"
             f"📌 Kal ka plan: {report['tomorrow_plan']}")
     await send_telegram_message(text)
-    await make_call(f"Aaj ka summary: {report['done_summary']}. Kal ka plan: {report['tomorrow_plan']}")
+    await speak(f"Aaj ka summary: {report['done_summary']}. Kal ka plan: {report['tomorrow_plan']}",
+                ring_title="Aaj ka wrap-up")
 
     for line in lines:
         await sheets.log_task_report(today, line["task_title"], line["status"],
