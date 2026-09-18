@@ -1,31 +1,11 @@
-import httpx
 from fastapi import APIRouter, Request, HTTPException
-from .config import TELEGRAM_BOT_TOKEN, TELEGRAM_OWNER_ID, TELEGRAM_WEBHOOK_SECRET
+from .config import TELEGRAM_OWNER_ID, TELEGRAM_WEBHOOK_SECRET
 from .brain import handle_message
 from .stt import transcribe
 from .tts import synthesize
+from . import telegram_client
 
 router = APIRouter()
-API = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}"
-
-
-async def _download_file(file_id: str) -> bytes:
-    async with httpx.AsyncClient(timeout=30) as client:
-        info = await client.get(f"{API}/getFile", params={"file_id": file_id})
-        path = info.json()["result"]["file_path"]
-        file_resp = await client.get(f"https://api.telegram.org/file/bot{TELEGRAM_BOT_TOKEN}/{path}")
-        return file_resp.content
-
-
-async def _send_text(chat_id: int, text: str):
-    async with httpx.AsyncClient(timeout=15) as client:
-        await client.post(f"{API}/sendMessage", json={"chat_id": chat_id, "text": text})
-
-
-async def _send_voice(chat_id: int, audio_bytes: bytes):
-    async with httpx.AsyncClient(timeout=30) as client:
-        files = {"voice": ("reply.mp3", audio_bytes, "audio/mpeg")}
-        await client.post(f"{API}/sendVoice", data={"chat_id": chat_id}, files=files)
 
 
 @router.post("/telegram/webhook/{secret}")
@@ -46,21 +26,23 @@ async def telegram_webhook(secret: str, request: Request):
 
     if "voice" in message:
         was_voice = True
-        audio_bytes = await _download_file(message["voice"]["file_id"])
+        audio_bytes = await telegram_client.download_file(message["voice"]["file_id"])
         user_text = await transcribe(audio_bytes, "voice.ogg")
     elif "text" in message:
         user_text = message["text"]
 
     if not user_text:
-        await _send_text(chat_id, "Samajh nahi aaya, phir se bolo/likho?")
+        await telegram_client.send_text("Samajh nahi aaya, phir se bolo/likho?", chat_id)
         return {"ok": True}
 
     reply = await handle_message("telegram", user_text)
 
+    # If the user *spoke* to Shadow, reply with a spoken voice note back —
+    # this is the "conversation after the ring" experience from ntfy_client.
     if was_voice:
         audio = await synthesize(reply)
-        await _send_voice(chat_id, audio)
+        await telegram_client.send_voice(audio, chat_id)
     else:
-        await _send_text(chat_id, reply)
+        await telegram_client.send_text(reply, chat_id)
 
     return {"ok": True}
