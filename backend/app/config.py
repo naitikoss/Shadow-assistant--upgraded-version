@@ -14,6 +14,8 @@ FEATURES = {
     "feedback_learning": True,       # requirement 8
     "google_calendar": True,
     "google_sheets_reports": True,
+    "use_ntfy_calls": True,          # "call section" -> ntfy ring + Telegram voice note (free).
+                                      # Set False to fall back to Twilio (needs the TWILIO_* vars).
 }
 
 # =========================================================================
@@ -39,13 +41,19 @@ TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "")
 TELEGRAM_WEBHOOK_SECRET = os.getenv("TELEGRAM_WEBHOOK_SECRET", "change-me")
 TELEGRAM_OWNER_ID = int(os.getenv("TELEGRAM_OWNER_ID", "0"))
 
-# --- Twilio (voice call reminders) ---
+# --- Twilio (legacy/optional — only used if NTFY_TOPIC is not set) ---
 TWILIO_ACCOUNT_SID = os.getenv("TWILIO_ACCOUNT_SID", "")
 TWILIO_AUTH_TOKEN = os.getenv("TWILIO_AUTH_TOKEN", "")
 TWILIO_FROM_NUMBER = os.getenv("TWILIO_FROM_NUMBER", "")
 TWILIO_CALL_TO_NUMBER = os.getenv("TWILIO_CALL_TO_NUMBER", "")
 PUBLIC_BASE_URL = os.getenv("PUBLIC_BASE_URL", "https://your-app.onrender.com")
 TWILIO_VOICE = os.getenv("TWILIO_VOICE", "Polly.Aditi")
+
+# --- ntfy.sh (free push-notification "ring" + Telegram voice-note reply) ---
+# This is now the default "call section" channel — see reminders.py / ntfy_client.py.
+NTFY_SERVER = os.getenv("NTFY_SERVER", "https://ntfy.sh")
+NTFY_TOPIC = os.getenv("NTFY_TOPIC", "")           # your private random topic name, e.g. shadow-nai-x7k29
+TELEGRAM_BOT_USERNAME = os.getenv("TELEGRAM_BOT_USERNAME", "")  # without the @, e.g. shadow_nai_bot
 
 # --- Orb client auth ---
 ORB_CLIENT_TOKEN = os.getenv("ORB_CLIENT_TOKEN", "change-me")
